@@ -2,7 +2,6 @@
 import argparse, socket, os, subprocess, ipaddress, netifaces
 from smb.SMBConnection import SMBConnection
 
-
 def GetNetwork():
     # Get the network address
     # INPUT = NOTHING
@@ -21,13 +20,27 @@ def ScanNetwork():
     # Check if the host is up !
     # INPUT = ip : 192.168.1.1
     # OUTPUT = string : Host Unreachable or Host 192.168.1.1 Up !
-    
+
     ipNetwork = GetNetwork()
     for ip in ipNetwork:
         ipsplit = str(ip)
         tmpsplit = ipsplit.split(".")
         if tmpsplit[3] != "0" and tmpsplit[3] != "255":
-            print(ip)
+            print(Ping(ip))
+
+def Ping(ip):
+    # Check if the host is up !
+    # INPUT = ip : 192.168.1.1
+    # OUTPUT = string : Host Unreachable or Host 192.168.1.1 Up !
+
+    OutputPing = subprocess.run(f"ping -c 2 {ip}", shell=True, capture_output=True, text=True)
+    #print(OutputPing.stdout)
+
+    if OutputPing.returncode == 1:
+        PingMessage = f"Host {ip} Unreachable"
+    if OutputPing.returncode == 0:
+        PingMessage = f"Host {ip} Up !"
+    return PingMessage
 
 ##MAIN##
 ScanNetwork()
