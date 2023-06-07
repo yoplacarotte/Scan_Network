@@ -27,6 +27,24 @@ def ScanNetwork():
         tmpsplit = ipsplit.split(".")
         if tmpsplit[3] != "0" and tmpsplit[3] != "255":
             print(Ping(ip))
+            ScanPort(ip)
+
+def ScanPort(ip):
+    # Check if the port is up !
+    # INPUT = str, str
+    # OUTPUT =
+
+    if args.P:
+        ListPort = args.P
+        for port in ListPort.split(','):
+            print(port, ip)
+    elif args.CP:
+        ListPort = [21,22,53,80,443,8080]
+        for i in ListPort:
+            print(i,ip)
+    else:
+        for port in range(1,1024):
+            print(port,ip)
 
 def Ping(ip):
     # Check if the host is up !
