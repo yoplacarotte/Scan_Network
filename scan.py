@@ -34,7 +34,6 @@ def Ping(ip):
     # OUTPUT = string : Host Unreachable or Host 192.168.1.1 Up !
 
     OutputPing = subprocess.run(f"ping -c 2 {ip}", shell=True, capture_output=True, text=True)
-    #print(OutputPing.stdout)
 
     if OutputPing.returncode == 1:
         PingMessage = f"Host {ip} Unreachable"
@@ -42,5 +41,16 @@ def Ping(ip):
         PingMessage = f"Host {ip} Up !"
     return PingMessage
 
+parser = argparse.ArgumentParser()
+parser.add_argument("-s", action="store_true", help=f"scan all the connected device on the same WiFi as you.")
+parser.add_argument("-P", help=f"option to precise the ports to scan (separated by a coma)")
+parser.add_argument("-CP", action='store_true', help=f"option that scan common ports : [21,22,80...]")
+args = parser.parse_args()
+
 ##MAIN##
-ScanNetwork()
+
+if args.s:
+    ScanNetwork()
+else:
+    parser.print_help()
+exit(1)
