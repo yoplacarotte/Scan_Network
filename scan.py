@@ -1,6 +1,13 @@
 #!/usr/bin/python3
-import argparse, socket, os, subprocess, ipaddress, netifaces
+import argparse, socket, subprocess, ipaddress, netifaces
 from smb.SMBConnection import SMBConnection
+
+class color:
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
 
 def GetNetwork():
     # Get the network address
@@ -22,12 +29,15 @@ def ScanNetwork():
     # OUTPUT = string : Host Unreachable or Host 192.168.1.1 Up !
 
     ipNetwork = GetNetwork()
+    print(f"Network : {ipNetwork}")
     for ip in ipNetwork:
         ipsplit = str(ip)
         tmpsplit = ipsplit.split(".")
         if tmpsplit[3] != "0" and tmpsplit[3] != "255":
-            print(Ping(ip))
+            print(f"IP : {ip}")
             ScanPort(ip)
+            if args.ping:
+                print(Ping(ip))
 
 def ScanPort(ip):
     # Check if the port is up !
@@ -37,14 +47,27 @@ def ScanPort(ip):
     if args.P:
         ListPort = args.P
         for port in ListPort.split(','):
-            print(port, ip)
+            ConnectPort(str(ip),int(port))
     elif args.CP:
         ListPort = [21,22,53,80,443,8080]
-        for i in ListPort:
-            print(i,ip)
+        for port in ListPort:
+            ConnectPort(str(ip),int(port))
     else:
         for port in range(1,1024):
-            print(port,ip)
+            ConnectPort(str(ip),int(port))
+    print()
+
+def ConnectPort(ip,port):
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(0.5)
+    result = sock.connect_ex((ip,port))
+        
+    if result == 0:
+        print(f"{color.OKGREEN}Port {port} Open{color.ENDC}")
+    else:
+        print(f"{color.FAIL}Port {port} Close{color.ENDC}")
+        sock.close()
 
 def Ping(ip):
     # Check if the host is up !
@@ -63,6 +86,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-s", action="store_true", help=f"scan all the connected device on the same WiFi as you.")
 parser.add_argument("-P", help=f"option to precise the ports to scan (separated by a coma)")
 parser.add_argument("-CP", action='store_true', help=f"option that scan common ports : [21,22,80...]")
+parser.add_argument("-ping", action='store_true', help=f"ping function")
 args = parser.parse_args()
 
 ##MAIN##
