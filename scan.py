@@ -4,10 +4,8 @@ from smb.SMBConnection import SMBConnection
 
 class color:
     OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
     FAIL = '\033[91m'
     ENDC = '\033[0m'
-    BOLD = '\033[1m'
 
 def GetNetwork():
     # Get the network address
@@ -34,7 +32,6 @@ def ScanNetwork():
         ipsplit = str(ip)
         tmpsplit = ipsplit.split(".")
         if tmpsplit[3] != "0" and tmpsplit[3] != "255":
-            print(f"IP : {ip}")
             ScanPort(ip)
             if args.ping:
                 print(Ping(ip))
@@ -44,12 +41,13 @@ def ScanPort(ip):
     # INPUT = str, str
     # OUTPUT =
 
+    print(f"IP : {ip}")
     if args.P:
         ListPort = args.P
         for port in ListPort.split(','):
             ConnectPort(str(ip),int(port))
     elif args.CP:
-        ListPort = [21,22,53,80,443,8080]
+        ListPort = [21,22,53,80,443,445,8080]
         for port in ListPort:
             ConnectPort(str(ip),int(port))
     else:
@@ -65,6 +63,9 @@ def ConnectPort(ip,port):
         
     if result == 0:
         print(f"{color.OKGREEN}Port {port} Open{color.ENDC}")
+        if args.banner:
+            print(GetBanner(sock, port))
+            #print()
     else:
         print(f"{color.FAIL}Port {port} Close{color.ENDC}")
         sock.close()
@@ -82,17 +83,49 @@ def Ping(ip):
         PingMessage = f"Host {ip} Up !"
     return PingMessage
 
+def DecodeBanner(data:bytes, codec = "ascii", test_exclude=[]):
+    ### Decode bytes by trying differents codecs
+    ### INPUT = bytes, string, list
+    ### OUTPUT = string
+    
+    codecs = ["ascii", "utf-8", "utf-16", "utf-32", "unicode"]
+    try:
+        return data.decode(codec)
+    except:
+        for cod in codecs:
+            if not cod in test_exclude:
+                return DecodeBanner(data, cod, [*test_exclude, codec])
+                break
+    return str(data)
+
+def GetBanner(sock, port):
+    if port == 80 or port == 8080 or port == 443:
+        banner = DecodeBanner(sock.recv(2048))
+    elif port == 21:
+        banner = DecodeBanner(sock.recv(2048))
+    elif port == 22:
+        banner = DecodeBanner(sock.recv(2048))
+    elif port == 445:
+        banner = DecodeBanner(sock.recv(2048))
+    else:
+        banner == DecodeBanner(sock.recv(2048))
+    return banner
+
 parser = argparse.ArgumentParser()
 parser.add_argument("-s", action="store_true", help=f"scan all the connected device on the same WiFi as you.")
 parser.add_argument("-P", help=f"option to precise the ports to scan (separated by a coma)")
 parser.add_argument("-CP", action='store_true', help=f"option that scan common ports : [21,22,80...]")
 parser.add_argument("-ping", action='store_true', help=f"ping function")
+parser.add_argument("-ip", help=f"scan ip given")
+parser.add_argument("-banner", action='store_true', help=f"Check banner")
 args = parser.parse_args()
 
 ##MAIN##
 
 if args.s:
     ScanNetwork()
+elif args.ip:
+    ScanPort(args.ip)
 else:
     parser.print_help()
 exit(1)
