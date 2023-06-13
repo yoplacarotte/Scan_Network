@@ -26,7 +26,10 @@ def ScanNetwork():
     # INPUT = ip : 192.168.1.1
     # OUTPUT = string : Host Unreachable or Host 192.168.1.1 Up !
 
-    ipNetwork = GetNetwork()
+    if args.s:
+        ipNetwork = GetNetwork()
+    if args.n:
+        ipNetwork = ipaddress.IPv4Network(args.n)
     print(f"Network : {ipNetwork}")
     for ip in ipNetwork:
         ipsplit = str(ip)
@@ -58,7 +61,7 @@ def ScanPort(ip):
 def ConnectPort(ip,port):
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.settimeout(10)
+    sock.settimeout(0.5)
     result = sock.connect_ex((ip,port))
         
     if result == 0:
@@ -99,9 +102,12 @@ def DecodeBanner(data:bytes, codec = "ascii", test_exclude=[]):
 
 def GetBanner(sock, port, ip):
     if port == 80 or port == 8080 or port == 443:
-        sock.send(str.encode("GET / HTTP/1.1\r\nHost:"+ str(ip) +":"+ str(port) +"\\robots.txt\r\n\r\n"))
-        banner = DecodeBanner(sock.recv(2048))
-        print(banner)
+        try:
+            sock.send(str.encode("GET / HTTP/1.1\r\nHost:"+ str(ip) +":"+ str(port) +"\\robots.txt\r\n\r\n"))
+            banner = DecodeBanner(sock.recv(2048))
+            print(banner)
+        except:
+            print("Error")
 
     elif port == 21:
         banner = DecodeBanner(sock.recv(2048))
@@ -154,12 +160,15 @@ parser.add_argument("-P", help=f"option to precise the ports to scan (separated 
 parser.add_argument("-CP", action='store_true', help=f"option that scan common ports : [21,22,80...]")
 parser.add_argument("-ping", action='store_true', help=f"ping function")
 parser.add_argument("-ip", help=f"scan ip given")
+parser.add_argument("-n", help=f"scan network given : 10.10.10.1/24")
 parser.add_argument("-banner", action='store_true', help=f"Check banner")
 args = parser.parse_args()
 
 ##MAIN##
 
 if args.s:
+    ScanNetwork()
+elif args.n:
     ScanNetwork()
 elif args.ip:
     ScanPort(args.ip)
