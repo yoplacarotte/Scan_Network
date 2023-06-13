@@ -47,7 +47,7 @@ def ScanPort(ip):
         for port in ListPort.split(','):
             ConnectPort(str(ip),int(port))
     elif args.CP:
-        ListPort = [21,22,53,80,443,445,8080]
+        ListPort = [21,22,25,53,80,88,110,123,137,138,139,162,389,443,445,464,587,636,989,990,3306,5432,8080]
         for port in ListPort:
             ConnectPort(str(ip),int(port))
     else:
@@ -58,14 +58,13 @@ def ScanPort(ip):
 def ConnectPort(ip,port):
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.settimeout(0.5)
+    sock.settimeout(10)
     result = sock.connect_ex((ip,port))
         
     if result == 0:
         print(f"{color.OKGREEN}Port {port} Open{color.ENDC}")
         if args.banner:
-            print(GetBanner(sock, port))
-            #print()
+            GetBanner(sock, port, ip)
     else:
         print(f"{color.FAIL}Port {port} Close{color.ENDC}")
         sock.close()
@@ -98,18 +97,53 @@ def DecodeBanner(data:bytes, codec = "ascii", test_exclude=[]):
                 break
     return str(data)
 
-def GetBanner(sock, port):
+def GetBanner(sock, port, ip):
     if port == 80 or port == 8080 or port == 443:
+        sock.send(str.encode("GET / HTTP/1.1\r\nHost:"+ str(ip) +":"+ str(port) +"\\robots.txt\r\n\r\n"))
         banner = DecodeBanner(sock.recv(2048))
+        print(banner)
+
     elif port == 21:
         banner = DecodeBanner(sock.recv(2048))
-    elif port == 22:
-        banner = DecodeBanner(sock.recv(2048))
+        sock.send(b"USER anonymous\r\n")
+        userftp = DecodeBanner(sock.recv(2048))
+        sock.send(b"PASS anonymous\r\n")
+        passwordftp = DecodeBanner(sock.recv(2048))
+        print(f"Benner: {banner}\rUser: {userftp}\rPassword: {passwordftp}")
     elif port == 445:
-        banner = DecodeBanner(sock.recv(2048))
+        try:
+            GetsmbShares(ip)
+        except:
+            print("SMB connection not authenticated")
     else:
-        banner == DecodeBanner(sock.recv(2048))
-    return banner
+        try:
+            banner = DecodeBanner(sock.recv(2048))
+            print(banner)
+        except:
+            print("No Banner")
+
+def GetsmbShares(ip):
+    ### Connect to the smb using default creds, grab the shares and print them
+    ### INPUT = string
+    ### OUTPUT = NOTHING
+    
+    userIDsmb = 'user'
+    passwordsmb = 'password'
+    client_machine_name = 'localpcname'
+    server_name = 'servername'
+    domain_name = 'domainname'
+    conn = SMBConnection(userIDsmb, passwordsmb, client_machine_name, server_name, domain=domain_name, use_ntlm_v2=True,
+                         is_direct_tcp=True)
+    conn.connect(ip, 445)
+    shares = conn.listShares()
+    if share:
+        print("SMB shares scanner : ")
+    for share in shares:
+        if not share.isSpecial and share.name not in ['NETLOGON', 'SYSVOL']:
+            sharedfiles = conn.listPath(share.name, '/')
+            for sharedfile in sharedfiles:
+                print(sharedfile.filename)
+    conn.close()
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-s", action="store_true", help=f"scan all the connected device on the same WiFi as you.")
