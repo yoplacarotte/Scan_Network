@@ -110,6 +110,7 @@ def GetBanner(sock, port, ip):
             print("Error")
 
     elif port == 21:
+        sock.settimeout(5)
         banner = DecodeBanner(sock.recv(2048))
         sock.send(b"USER anonymous\r\n")
         userftp = DecodeBanner(sock.recv(2048))
