@@ -110,6 +110,9 @@ def GetBanner(sock, port, ip):
         sock.send(b"PASS anonymous\r\n")
         passwordftp = DecodeBanner(sock.recv(2048))
         print(f"Benner: {banner}\rUser: {userftp}\rPassword: {passwordftp}")
+    elif port == 139:
+        banner = subprocess.run(f"nmblookup -A {ip}", shell=True, capture_output=True, text=True)
+        print(banner.stdout)
     elif port == 445:
         try:
             GetsmbShares(ip)
