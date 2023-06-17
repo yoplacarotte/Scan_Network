@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import argparse, socket, subprocess, ipaddress, netifaces, os
+import argparse, socket, subprocess, ipaddress, netifaces, os, dns.resolver
 from smb.SMBConnection import SMBConnection
 
 class color:
@@ -10,7 +10,7 @@ class color:
 def GetNetwork():
     # Get the network address
     # INPUT = NOTHING
-    # OUTPUT = string : 192.168.1.0/24
+    # OUTPUT = IPv4Network : 192.168.1.0/24
     
     iface = netifaces.gateways()
     info = netifaces.ifaddresses(iface['default'][netifaces.AF_INET][1])
@@ -22,10 +22,9 @@ def GetNetwork():
     return ipaddress.IPv4Network(addr +"/"+ str(CIDR), strict=False)
 
 def ScanNetwork():
-    # Check if the host is up !
-    # INPUT = ip : 192.168.1.1
-    # OUTPUT = string : Host Unreachable or Host 192.168.1.1 Up !
+    # Scan the network
 
+    #Variable declaration
     RapportList = []
     if args.ip:
         NameRapport = args.ip
@@ -50,16 +49,21 @@ def ScanNetwork():
                     print(Ping(ip,RapportList))
 
     if args.rapport:
-        path = os.getcwd()           
-        with open(path+"/Rapport/"+"Rapport_"+NameRapport+".txt", "w+") as FileRapport:
-            for i in RapportList:
-                FileRapport.write(i)
-            FileRapport.close()
+        #Checks that the list is not empty
+        if RapportList != []:
+            path = os.getcwd()
+            pathRapport = path+"/Rapport/"+"Rapport_"+NameRapport+".txt"
+            try:           
+                with open(pathRapport, "w+") as FileRapport:
+                    for i in RapportList:
+                        FileRapport.write(i)
+                    FileRapport.close()
+            except OSError:
+                print(f"Can't open {pathRapport}")
 
 def ScanPort(ip, RapportList):
     # Check if the port is up !
-    # INPUT = str, str
-    # OUTPUT =
+    # INPUT = str, list
 
     print(f"IP : {ip}")
     if args.P:
@@ -67,7 +71,7 @@ def ScanPort(ip, RapportList):
         for port in ListPort.split(','):
             ConnectPort(str(ip),int(port),RapportList)
     elif args.CP:
-        ListPort = [21,22,25,53,80,88,110,123,137,138,139,162,389,443,445,464,587,636,989,990,3306,5432,8080]
+        ListPort = [21,22,25,53,80,88,110,123,137,138,139,162,389,443,445,464,587,636,989,990,3306,5432,8006,8080]
         for port in ListPort:
             ConnectPort(str(ip),int(port),RapportList)
     else:
@@ -76,6 +80,8 @@ def ScanPort(ip, RapportList):
     print()
 
 def ConnectPort(ip,port,RapportList):
+    # Check if the port is up !
+    # INPUT = str, srt, list
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(0.5)
@@ -93,7 +99,7 @@ def ConnectPort(ip,port,RapportList):
 
 def Ping(ip,RapportList):
     # Check if the host is up !
-    # INPUT = ip : 192.168.1.1
+    # INPUT = str, list
     # OUTPUT = string : Host Unreachable or Host 192.168.1.1 Up !
 
     OutputPing = subprocess.run(f"ping -c 2 {ip}", shell=True, capture_output=True, text=True)
@@ -107,9 +113,9 @@ def Ping(ip,RapportList):
     return PingMessage
 
 def DecodeBanner(data:bytes, codec = "ascii", test_exclude=[]):
-    ### Decode bytes by trying differents codecs
-    ### INPUT = bytes, string, list
-    ### OUTPUT = string
+    # Decode bytes by trying differents codecs
+    # INPUT = bytes, string, list
+    # OUTPUT = string
     
     codecs = ["ascii", "utf-8", "utf-16", "utf-32", "unicode"]
     try:
@@ -122,26 +128,38 @@ def DecodeBanner(data:bytes, codec = "ascii", test_exclude=[]):
     return str(data)
 
 def GetBanner(sock,port,ip,RapportList):
-    if port == 80 or port == 8080 or port == 443:
+    # Get banner from a service
+    # INPUT = bytes, str, str, list
+    
+    if port == 80 or port == 8080 or port == 443 or port == 8006:
         try:
             sock.send(str.encode("GET / HTTP/1.1\r\nHost:"+ str(ip) +":"+ str(port) +"\\robots.txt\r\n\r\n"))
             banner = DecodeBanner(sock.recv(2048))
             if args.rapport:
                 RapportList.append(banner+"\n")
             print(banner)
-        except:
-            print("Error")
-
+        except ConnectionResetError:
+            print("Connexion error, reset by peer")
+            banner = DecodeBanner(sock.recv(2048))
+            if args.rapport:
+                RapportList.append(banner+"\n")
+      
     elif port == 21:
         sock.settimeout(5)
         banner = DecodeBanner(sock.recv(2048))
-        sock.send(b"USER anonymous\r\n")
-        userftp = DecodeBanner(sock.recv(2048))
-        sock.send(b"PASS anonymous\r\n")
-        passwordftp = DecodeBanner(sock.recv(2048))
-        print(f"Banner: {banner}\rUser: {userftp}\rPassword: {passwordftp}")
+        print(banner)
         if args.rapport:
-            RapportList.append(f"Banner: {banner}User: {userftp}Password: {passwordftp}"+"\n")
+            RapportList.append(banner+"\n")
+
+    elif port == 53:
+        try:
+            banner = "DNS"
+            print(banner)
+            if args.rapport:
+                RapportList.append(banner+"\n")
+        except:
+            print("Banner error")
+
     elif port == 139:
         banner = subprocess.run(f"nmblookup -A {ip}", shell=True, capture_output=True, text=True)
         if args.rapport:
@@ -152,6 +170,7 @@ def GetBanner(sock,port,ip,RapportList):
             GetsmbShares(ip,RapportList)
         except:
             print("SMB connection not authenticated")
+
     else:
         try:
             banner = DecodeBanner(sock.recv(2048))
@@ -159,12 +178,12 @@ def GetBanner(sock,port,ip,RapportList):
                 RapportList.append(banner+"\n")
             print(banner)
         except:
-            print("No Banner")
+            print("Banner unknown")
 
 def GetsmbShares(ip):
-    ### Connect to the smb using default creds, grab the shares and print them
-    ### INPUT = string
-    ### OUTPUT = NOTHING
+    # Connect to the smb using default creds, grab the shares and print them
+    # INPUT = string
+    # OUTPUT = NOTHING
     
     userIDsmb = 'user'
     passwordsmb = 'password'
