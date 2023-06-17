@@ -26,18 +26,21 @@ def ScanNetwork():
     # INPUT = ip : 192.168.1.1
     # OUTPUT = string : Host Unreachable or Host 192.168.1.1 Up !
 
-    if args.s:
-        ipNetwork = GetNetwork()
-    if args.n:
-        ipNetwork = ipaddress.IPv4Network(args.n)
-    print(f"Network : {ipNetwork}")
-    for ip in ipNetwork:
-        ipsplit = str(ip)
-        tmpsplit = ipsplit.split(".")
-        if tmpsplit[3] != "0" and tmpsplit[3] != "255":
-            ScanPort(ip)
-            if args.ping:
-                print(Ping(ip))
+    if args.ip:
+        ScanPort(args.ip)
+    else:
+        if args.s:
+            ipNetwork = GetNetwork()
+        if args.n:
+            ipNetwork = ipaddress.IPv4Network(args.n)
+        print(f"Network : {ipNetwork}")
+        for ip in ipNetwork:
+            ipsplit = str(ip)
+            tmpsplit = ipsplit.split(".")
+            if tmpsplit[3] != "0" and tmpsplit[3] != "255":
+                ScanPort(ip)
+                if args.ping:
+                    print(Ping(ip))
 
 def ScanPort(ip):
     # Check if the port is up !
@@ -163,16 +166,13 @@ parser.add_argument("-ping", action='store_true', help=f"ping function")
 parser.add_argument("-ip", help=f"scan ip given")
 parser.add_argument("-n", help=f"scan network given : 10.10.10.1/24")
 parser.add_argument("-banner", action='store_true', help=f"Check banner")
+parser.add_argument("-rapport", action='store_true', help=f"Check banner")
 args = parser.parse_args()
 
 ##MAIN##
 
-if args.s:
-    ScanNetwork()
-elif args.n:
-    ScanNetwork()
-elif args.ip:
-    ScanPort(args.ip)
+if args.s or args.n or args.ip:
+    ScanNetwork()  
 else:
     parser.print_help()
 exit(1)
