@@ -52,6 +52,8 @@ def ScanNetwork():
         #Checks that the list is not empty
         if RapportList != []:
             path = os.getcwd()
+            if not os.path.exists(path+"/Rapport/"):
+                os.makedirs(path+"/Rapport/")
             pathRapport = path+"/Rapport/"+"Rapport_"+NameRapport+".txt"
             try:           
                 with open(pathRapport, "w+") as FileRapport:
