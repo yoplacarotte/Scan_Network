@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3.11
 import argparse, socket, subprocess, ipaddress, netifaces, os, dns.resolver
 from smb.SMBConnection import SMBConnection
 
@@ -206,7 +206,7 @@ def GetsmbShares(ip):
     conn.close()
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-s", action="store_true", help=f"Ccan all the connected device on the same WiFi/Network as you.")
+parser.add_argument("-s", action="store_true", help=f"Scan all the connected device on the same WiFi/Network as you.")
 parser.add_argument("-P", help=f"Option to precise the ports to scan (separated by a coma)")
 parser.add_argument("-CP", action='store_true', help=f"Option that scan common ports : [21,22,80...]")
 parser.add_argument("-ping", action='store_true', help=f"Only ping hosts")
