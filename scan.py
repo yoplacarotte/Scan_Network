@@ -206,14 +206,14 @@ def GetsmbShares(ip):
     conn.close()
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-s", action="store_true", help=f"scan all the connected device on the same WiFi as you.")
-parser.add_argument("-P", help=f"option to precise the ports to scan (separated by a coma)")
-parser.add_argument("-CP", action='store_true', help=f"option that scan common ports : [21,22,80...]")
-parser.add_argument("-ping", action='store_true', help=f"ping function")
-parser.add_argument("-ip", help=f"scan ip given")
-parser.add_argument("-n", help=f"scan network given : 10.10.10.1/24")
+parser.add_argument("-s", action="store_true", help=f"Ccan all the connected device on the same WiFi/Network as you.")
+parser.add_argument("-P", help=f"Option to precise the ports to scan (separated by a coma)")
+parser.add_argument("-CP", action='store_true', help=f"Option that scan common ports : [21,22,80...]")
+parser.add_argument("-ping", action='store_true', help=f"Only ping hosts")
+parser.add_argument("-ip", help=f"Scan ip given")
+parser.add_argument("-n", help=f"Scan network given : 10.10.10.1/24")
 parser.add_argument("-banner", action='store_true', help=f"Check banner")
-parser.add_argument("-rapport", action='store_true', help=f"Check banner")
+parser.add_argument("-rapport", action='store_true', help=f"Write output in a file")
 args = parser.parse_args()
 
 ##MAIN##
