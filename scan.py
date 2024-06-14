@@ -1,6 +1,6 @@
 #!/usr/bin/python3.11
-import argparse, socket, subprocess, ipaddress, netifaces, os, dns.resolver
-from smb.SMBConnection import SMBConnection
+import argparse, socket, subprocess, os
+import netifaces, ipaddress
 
 class color:
     OKGREEN = '\033[92m'
@@ -185,8 +185,6 @@ def DecodeBanner(data:bytes, codec = "ascii", test_exclude=[]) -> str:
     return str(data) #return data as str
 
 def GetBanner(sock, port, ip):
-    # Get banner from a service
-    # INPUT = bytes, str, str, list
     """
     Decode data receive from sock connection
 
@@ -208,6 +206,7 @@ def GetBanner(sock, port, ip):
     --------
     >>>GetBanner(<socket.socket fd=3, family=2, type=1, proto=0, laddr=('0.0.0.0', 0)>, 80, "192.168.1.48")
     """
+
     if port == 80 or port == 8080 or port == 443 or port == 8006: #Check web service port
         try:
             sock.send(str.encode("GET / HTTP/1.1\r\nHost:"+ str(ip) +":"+ str(port) +"\\robots.txt\r\n\r\n"))
@@ -229,26 +228,11 @@ def GetBanner(sock, port, ip):
         if args.rapport:
             RapportList.append(banner+"\n")
 
-    elif port == 53:
-        try:
-            banner = "DNS"
-            print(banner)
-            if args.rapport:
-                RapportList.append(banner+"\n")
-        except:
-            print("Banner error")
-
     elif port == 139:
         banner = subprocess.run(f"nmblookup -A {ip}", shell=True, capture_output=True, text=True)
         if args.rapport:
             RapportList.append(banner.stdout+"\n")
         print(banner.stdout)
-
-    elif port == 445:
-        try:
-            GetsmbShares(ip)
-        except:
-            print("SMB connection not authenticated")
 
     else:
         try:
@@ -259,43 +243,6 @@ def GetBanner(sock, port, ip):
             
         except:
             print("Banner unknown")
-
-def GetsmbShares(ip):
-    """
-    Try connection to host and list smb shares
-
-    Paramaters
-    ----------
-    ip : str
-        Ip to check smb share
-    
-    Returns
-    -------
-    str
-        return smbshares if exist
-
-    Examples
-    --------
-    """
-
-    #Set data for the smb connection
-    userIDsmb = 'user'
-    passwordsmb = 'password'
-    client_machine_name = 'localpcname'
-    server_name = 'servername'
-    domain_name = 'domainname'
-    conn = SMBConnection(userIDsmb, passwordsmb, client_machine_name, server_name, domain=domain_name, use_ntlm_v2=True,
-                         is_direct_tcp=True)
-    conn.connect(ip, 445)
-    shares = conn.listShares()
-    if share:
-        print("SMB shares scanner : ")
-    for share in shares:
-        if not share.isSpecial and share.name not in ['NETLOGON', 'SYSVOL']:
-            sharedfiles = conn.listPath(share.name, '/')
-            for sharedfile in sharedfiles:
-                print(sharedfile.filename)
-    conn.close()
 
 def Rapport(NameRapport: str):
     """
