@@ -88,8 +88,17 @@ def ScanPort(ip: str):
     print(f"IP : {ip}")
     if args.P:
         ListPort = args.P
-        for port in ListPort.split(','): #Split list from ","
-            ConnectPort(str(ip),int(port))
+        if "," in str(ListPort): #Condition format
+            for port in ListPort.split(','): #Split list from ","
+                ConnectPort(str(ip),int(port))
+
+        if "-" in str(ListPort): #Condition format
+            for port in range(int(ListPort.split('-')[0]), int(ListPort.split('-')[1])+1): #range with first element in arg and last to set the loop
+                ConnectPort(str(ip),int(port))
+            pass
+
+        else:
+            print(f"Error in format : {ListPort}") #Print error message and rewrite args to view error
 
     elif args.CP:
         ListPort = [21,22,25,53,80,88,110,123,137,138,139,162,389,443,445,464,587,636,989,990,3306,5432,8006,8080] #Set list of common port to scan
@@ -284,7 +293,7 @@ def main():
     #Define args
     parser = argparse.ArgumentParser()
     parser.add_argument("-s", action="store_true", help=f"Scan all the connected device on the same WiFi/Network as you.")
-    parser.add_argument("-P", help=f"Option to precise the ports to scan (separated by a coma)")
+    parser.add_argument("-P", help=f"Option to precise the ports to scan (separated by a coma), or the range of ports (separated by a -)")
     parser.add_argument("-CP", action='store_true', help=f"Option that scan common ports : [21,22,80...]")
     parser.add_argument("-ping", action='store_true', help=f"Only ping hosts")
     parser.add_argument("-ip", help=f"Scan ip given")
