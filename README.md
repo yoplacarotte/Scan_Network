@@ -20,7 +20,7 @@ usage: scan.py [-h] [-s] [-P P] [-CP] [-ping] [-ip IP] [-n N] [-banner] [-rappor
 options:
   -h, --help  show this help message and exit
   -s          Scan all the connected device on the same WiFi/Network as you.
-  -P P        Option to precise the ports to scan (separated by a coma)
+  -P P        Option to precise the ports to scan (separated by a coma), or the range of ports (separated by a -)
   -CP         Option that scan common ports : [21,22,80...]
   -ping       Only ping hosts
   -ip IP      Scan ip given
